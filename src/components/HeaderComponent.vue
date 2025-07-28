@@ -23,7 +23,7 @@
 export default {
     data() {
         return {
-            isLogin: false,
+            isLogin: false
         }
     }, created() {
         const token = localStorage.getItem("token");

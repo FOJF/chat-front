@@ -8,7 +8,8 @@ export default {
     return {
       messages: [],
       newMessage: "",
-      stompClient: null
+      stompClient: null,
+      token: ""
     }
   },
   created() {
@@ -23,7 +24,11 @@ export default {
       const sockJS = new SockJS(`${process.env.VUE_APP_API_BASE_URL}/connect`);
       this.stompClient = Stomp.over(sockJS);
 
-      this.stompClient.connect({},
+      this.token = localStorage.getItem('token');
+
+      this.stompClient.connect({
+            Authorization: `Bearer ${this.token}`
+          },
           () => {
             this.stompClient.subscribe(`/topic/1`, (message) => {
               this.messages.push(message.body);

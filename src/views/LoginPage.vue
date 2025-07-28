@@ -30,10 +30,12 @@ export default {
     }, methods: {
         async doLogin() {
             const loginData = { email: this.email, password: this.password };
-            const response = await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/login`, loginData);
-            console.log(response);
-            const token = response.data;
-            localStorage.setItem("token", token);
+            await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/login`, loginData).then(res=>{
+              const token = res.data;
+              localStorage.setItem("token", token.data);
+              console.log(token);
+            });
+
             window.location.href = '/';
         }
     }
