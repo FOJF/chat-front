@@ -1,39 +1,55 @@
 <template>
-    <v-app-bar app dark>
-        <v-container>
-            <v-row align="center">
-                <v-col class="d-flex justify-start">
-                    <v-btn :to="{path:'/member/list'}">회원 목록</v-btn>
-                    <v-btn :to="{path: '/groupchatting/list'}">채팅방 목록</v-btn>
-                </v-col>
-                <v-col class="text-center">
-                    <v-btn :to="{path: '/'}">chat 서비스</v-btn>
-                </v-col>
-                <v-col class="d-flex justify-end">
-                    <v-btn v-if="isLogin" :to="{path:'/my/chat/page'}">MyChatPage</v-btn>
-                    <v-btn v-if="!isLogin" :to="{path:'/member/create'}">회원가입</v-btn>
-                    <v-btn v-if="!isLogin" :to="{path:'/login'}">로그인</v-btn>
-                    <v-btn v-if="isLogin" @click="doLogout">로그아웃</v-btn>
-                </v-col>
-            </v-row>
-        </v-container>
-    </v-app-bar>
+  <v-app-bar app color="primary" dark>
+    <v-toolbar-title>
+      <v-btn variant="text" :to="{path: '/'}">Chat Service</v-btn>
+    </v-toolbar-title>
+
+    <v-spacer></v-spacer>
+
+    <v-btn variant="text" :to="{path:'/member/list'}">회원 목록</v-btn>
+    <v-btn variant="text" :to="{path: '/groupchatting/list'}">채팅방 목록</v-btn>
+
+    <v-spacer></v-spacer>
+
+    <template v-if="isLogin">
+      <v-btn variant="text" :to="{path:'/my/chat/page'}">MyChatPage</v-btn>
+      <v-btn icon @click="doLogout">
+        <v-icon>mdi-logout</v-icon>
+      </v-btn>
+    </template>
+
+    <template v-else>
+      <v-btn variant="text" :to="{path:'/member/create'}">
+        <v-icon left>mdi-account-plus</v-icon>
+        회원가입
+      </v-btn>
+      <v-btn variant="text" :to="{path:'/login'}">
+        <v-icon left>mdi-login</v-icon>
+        로그인
+      </v-btn>
+    </template>
+  </v-app-bar>
 </template>
+
 <script>
 export default {
-    data() {
-        return {
-            isLogin: false
-        }
-    }, created() {
-        const token = localStorage.getItem("token");
-        if (token) this.isLogin = true;
-    }, methods: {
-        doLogout() {
-            localStorage.clear();
-            window.location.reload();
-        }
+  data() {
+    return {
+      isLogin: false
     }
+  },
+  created() {
+    const token = localStorage.getItem("token");
+    if (token) this.isLogin = true;
+  },
+  methods: {
+    doLogout() {
+      localStorage.clear();
+      this.$router.push('/login');
+    }
+  }
 }
-
 </script>
+
+<style scoped>
+</style>
