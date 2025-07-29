@@ -9,17 +9,23 @@ export default {
       messages: [],
       newMessage: "",
       stompClient: null,
-      token: ""
+      senderEmail: ""
     }
   },
   created() {
+    this.senderEmail = localStorage.getItem("email");
     this.connectWebsocket();
   },
-  beforeUnmount() {
+  beforeRouteLeave(to, from, next) { // 사용자가 현재 라우트에서 다른 라우트로 이동하려고 할 때 호출되는 훅함수
+    this.disconnectWebsocket();
+    next();
+  },
+  beforeUnmount() { // 화면을 완전히 껐을 때 호출되는 훅홤수
     this.disconnectWebsocket();
   },
   methods: {
     connectWebsocket() {
+      if (this.stompClient && this.stompClient.connected) return; // 이미 연결되어있으면 연결수립 시도 X
       // sockjs는 websocket을 내장한 향상된 js라이브러리. http엔드포인트 사용
       const sockJS = new SockJS(`${process.env.VUE_APP_API_BASE_URL}/connect`);
       this.stompClient = Stomp.over(sockJS);
@@ -31,7 +37,8 @@ export default {
           },
           () => {
             this.stompClient.subscribe(`/topic/1`, (message) => {
-              this.messages.push(message.body);
+              const parseMessage = JSON.parse(message.body);
+              this.messages.push(parseMessage);
               this.scrollToBottom();
             });
           }
@@ -39,7 +46,15 @@ export default {
     },
     sendMessage() {
       if (this.newMessage.trim() === "") return;
-      this.stompClient.send(`/publish/1`, this.newMessage);
+
+      const message = {
+        senderEmail: this.senderEmail,
+        message: this.newMessage
+      }
+
+      const json = JSON.stringify(message);
+
+      this.stompClient.send(`/publish/1`, json);
       this.newMessage = "";
     },
     scrollToBottom() {
@@ -49,11 +64,12 @@ export default {
       })
     },
     disconnectWebsocket() {
-      // if (this.stompClient) {
-      //   this.stompClient.disconnect();
-      //   console.log("Disconnected");
-      //   this.stompClient = null;
-      // }
+      if (this.stompClient && this.stompClient.connected) {
+        this.stompClient.unsubscribe(`/topic/1`);
+        this.stompClient.disconnect();
+        console.log("Disconnected");
+        this.stompClient = null;
+      }
     }
   }
 }
@@ -71,8 +87,9 @@ export default {
             <div
                 v-for="(message, index) in messages"
                 :key="index"
+                :class="['chat-message', message.senderEmail === this.senderEmail ? 'sent' : 'received']"
             >
-              {{ message }}
+              <strong>{{ message.senderEmail }} : </strong> {{ message.message }}
             </div>
           </div>
           <v-text-field
@@ -93,5 +110,17 @@ export default {
   overflow-y: auto;
   border: 1px solid #ddd;
   margin-bottom: 10px;
+}
+
+.chat-message {
+  margin-bottom: 10px;
+}
+
+.sent {
+  text-align: right;
+}
+
+.received {
+  text-align: left;
 }
 </style>
