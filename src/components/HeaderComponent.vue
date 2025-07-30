@@ -11,23 +11,11 @@
 
     <v-spacer></v-spacer>
 
-    <template v-if="isLogin">
-      <v-btn variant="text" :to="{path:'/my/chat/page'}">MyChatPage</v-btn>
-      <v-btn icon @click="doLogout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
-    </template>
+    <v-btn v-if="isLogin" variant="text" :to="{path:'/my/chat/page'}">MyChatPage</v-btn>
+    <v-btn v-if="isLogin" @click="doLogout">로그아웃</v-btn>
 
-    <template v-else>
-      <v-btn variant="text" :to="{path:'/member/create'}">
-        <v-icon left>mdi-account-plus</v-icon>
-        회원가입
-      </v-btn>
-      <v-btn variant="text" :to="{path:'/login'}">
-        <v-icon left>mdi-login</v-icon>
-        로그인
-      </v-btn>
-    </template>
+    <v-btn v-if="!isLogin" variant="text" :to="{path:'/member/create'}">회원가입</v-btn>
+    <v-btn v-if="!isLogin" variant="text" :to="{path:'/login'}">로그인</v-btn>
   </v-app-bar>
 </template>
 
@@ -45,7 +33,7 @@ export default {
   methods: {
     doLogout() {
       localStorage.clear();
-      this.$router.push('/login');
+      window.location.reload();
     }
   }
 }

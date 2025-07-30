@@ -50,23 +50,16 @@ export default {
   },
   methods: {
     async doLogin() {
-      this.loading = true;
-      this.error = null;
-      try {
-        const loginData = { email: this.email, password: this.password };
-        const response = await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/login`, loginData);
-        const token = response.data.data;
+      const loginData = {email: this.email, password: this.password};
+      await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/login`, loginData).then(res => {
+        const token = res.data.data;
         localStorage.setItem("token", token);
         const jwtDecoded = jwtDecode(token);
         localStorage.setItem("role", jwtDecoded.role);
         localStorage.setItem("email", jwtDecoded.sub);
-        this.$router.push('/');
-      } catch (err) {
-        this.error = "이메일 또는 비밀번호가 잘못되었습니다.";
-        console.error(err);
-      } finally {
-        this.loading = false;
-      }
+      });
+
+      window.location.href = '/';
     }
   }
 }

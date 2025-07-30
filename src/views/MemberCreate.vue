@@ -9,41 +9,41 @@
           <v-card-text>
             <v-form ref="form" @submit.prevent="userCreate">
               <v-text-field
-                label="이름"
-                v-model="name"
-                prepend-icon="mdi-account"
-                :rules="[rules.required]"
-                required
+                  label="이름"
+                  v-model="name"
+                  prepend-icon="mdi-account"
+                  :rules="[rules.required]"
+                  required
               ></v-text-field>
               <v-text-field
-                label="닉네임"
-                v-model="nickname"
-                prepend-icon="mdi-account-circle"
-                :rules="[rules.required]"
-                required
+                  label="닉네임"
+                  v-model="nickname"
+                  prepend-icon="mdi-account-circle"
+                  :rules="[rules.required]"
+                  required
               ></v-text-field>
               <v-text-field
-                label="전화번호"
-                v-model="phone"
-                prepend-icon="mdi-phone"
-                :rules="[rules.required]"
-                required
+                  label="전화번호"
+                  v-model="phone"
+                  prepend-icon="mdi-phone"
+                  :rules="[rules.required]"
+                  required
               ></v-text-field>
               <v-text-field
-                label="이메일"
-                v-model="email"
-                prepend-icon="mdi-email"
-                type="email"
-                :rules="[rules.required, rules.email]"
-                required
+                  label="이메일"
+                  v-model="email"
+                  prepend-icon="mdi-email"
+                  type="email"
+                  :rules="[rules.required, rules.email]"
+                  required
               ></v-text-field>
               <v-text-field
-                label="비밀번호"
-                v-model="password"
-                prepend-icon="mdi-lock"
-                type="password"
-                :rules="[rules.required, rules.min]"
-                required
+                  label="비밀번호"
+                  v-model="password"
+                  prepend-icon="mdi-lock"
+                  type="password"
+                  :rules="[rules.required, rules.min]"
+                  required
               ></v-text-field>
               <v-alert v-if="error" type="error" dense class="mt-3">{{ error }}</v-alert>
               <v-card-actions>
@@ -80,26 +80,15 @@ export default {
   },
   methods: {
     async userCreate() {
-      if (this.$refs.form.validate()) {
-        this.loading = true;
-        this.error = null;
-        try {
-          const data = {
-            name: this.name,
-            email: this.email,
-            password: this.password,
-            nickname: this.nickname,
-            phone: this.phone
-          };
-          await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/sign`, data);
-          this.$router.push("/login");
-        } catch (err) {
-          this.error = "회원가입에 실패했습니다. 입력 정보를 확인해주세요.";
-          console.error(err);
-        } finally {
-          this.loading = false;
-        }
+      const data = {
+        name: this.name,
+        email: this.email,
+        password: this.password,
+        nickname: this.nickname,
+        phone: this.phone
       }
+      await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/sign`, data);
+      this.$router.push("/");
     }
   }
 }
