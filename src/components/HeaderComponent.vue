@@ -7,7 +7,7 @@
     <v-spacer></v-spacer>
 
     <v-btn variant="text" :to="{path:'/member/list'}">회원 목록</v-btn>
-    <v-btn variant="text" :to="{path: '/groupchatting/list'}">채팅방 목록</v-btn>
+    <v-btn variant="text" :to="{path: '/chatroom/list'}">채팅방 목록</v-btn>
 
     <v-spacer></v-spacer>
 
