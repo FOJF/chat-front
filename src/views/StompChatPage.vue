@@ -21,7 +21,7 @@ export default {
 
     console.log(response.data.data);
 
-    this.messages=response.data.data;
+    this.messages = response.data.data;
 
     this.connectWebsocket();
   },
@@ -41,15 +41,13 @@ export default {
 
       this.token = localStorage.getItem('token');
 
-      this.stompClient.connect({
-            Authorization: `Bearer ${this.token}`
-          },
+      this.stompClient.connect(
+          { Authorization: `Bearer ${this.token}` },
           () => {
             this.stompClient.subscribe(`/topic/${this.roomId}`, (message) => {
               const parseMessage = JSON.parse(message.body);
               this.messages.push(parseMessage);
-              this.scrollToBottom();
-            },{Authorization: `Bearer ${this.token}`});
+            }, { Authorization: `Bearer ${this.token}` });
           }
       );
     },
@@ -68,9 +66,12 @@ export default {
     },
     scrollToBottom() {
       this.$nextTick(() => {
-        const chatBox = this.$el.querySelector('.chat-box');
-        chatBox.scrollTop = chatBox.scrollHeight;
-      })
+        const chatBoxRef = this.$refs.chatBox;
+        if (chatBoxRef) {
+          const el = chatBoxRef.$el || chatBoxRef;
+          el.scrollTop = el.scrollHeight;
+        }
+      });
     },
     disconnectWebsocket() {
       if (this.stompClient && this.stompClient.connected) {
@@ -80,56 +81,79 @@ export default {
         this.stompClient = null;
       }
     }
+  },
+  watch: {
+    messages: {
+      handler() {
+        this.scrollToBottom();
+      },
+      deep: true
+    }
   }
 }
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="center">
-      <v-col cols="12" md="8">
-        <v-card-title class="text-center text-h5">
-          채팅
-        </v-card-title>
-        <v-card-text>
-          <div class="chat-box">
+  <v-container class="fill-height">
+    <v-row class="fill-height" justify="center" align="center">
+      <v-col cols="12" md="8" class="d-flex flex-column chat-container">
+        <v-card class="flex-grow-1 d-flex flex-column">
+          <v-card-title class="text-center text-h5">
+            채팅
+          </v-card-title>
+          <v-divider></v-divider>
+          <v-card-text class="flex-grow-1 overflow-y-auto pa-4" ref="chatBox">
             <div
                 v-for="(message, index) in messages"
                 :key="index"
-                :class="['chat-message', message.senderEmail === this.senderEmail ? 'sent' : 'received']"
+                :class="['d-flex', 'mb-4', message.senderEmail === this.senderEmail ? 'justify-end' : 'justify-start']"
             >
-              <strong>{{ message.senderEmail }} : </strong> {{ message.message }} ({{message.readCount}})
+              <div :class="['message-bubble', message.senderEmail === this.senderEmail ? 'sent' : 'received']">
+                <div class="font-weight-bold" v-if="message.senderEmail !== this.senderEmail">{{ message.senderEmail }}</div>
+                <div>{{ message.message }}</div>
+                <div class="text-caption text-right">{{ message.readCount }}</div>
+              </div>
             </div>
-          </div>
-          <v-text-field
-              v-model="newMessage"
-              label="메세지 입력"
-              @keyup.enter="sendMessage"
-          />
-          <v-btn color="primary" block @click="sendMessage">전송</v-btn>
-        </v-card-text>
+          </v-card-text>
+          <v-divider></v-divider>
+          <v-card-actions class="pa-4">
+            <v-text-field
+                v-model="newMessage"
+                label="메세지 입력"
+                @keyup.enter="sendMessage"
+                hide-details
+                outlined
+                dense
+            />
+            <v-btn color="primary" class="ml-4" @click="sendMessage">전송</v-btn>
+          </v-card-actions>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>
 </template>
 
-<style>
-.chat-box {
-  height: 300px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
+<style scoped>
+.chat-container {
+  height: 90vh;
 }
 
-.chat-message {
-  margin-bottom: 10px;
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
 }
 
 .sent {
-  text-align: right;
+  background-color: #1976D2;
+  color: white;
+  border-bottom-right-radius: 0;
 }
 
 .received {
-  text-align: left;
+  background-color: #f0f0f0;
+  color: black;
+  border-bottom-left-radius: 0;
 }
 </style>
