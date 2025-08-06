@@ -52,9 +52,11 @@ export default {
     async doLogin() {
       const loginData = {email: this.email, password: this.password};
       await axios.post(`${process.env.VUE_APP_API_BASE_URL}/user/login`, loginData).then(res => {
-        const token = res.data.data;
+        const token = res.data.data.accessToken;
         localStorage.setItem("token", token);
+
         const jwtDecoded = jwtDecode(token);
+        console.log(jwtDecoded);
         localStorage.setItem("role", jwtDecoded.role);
         localStorage.setItem("email", jwtDecoded.sub);
       });

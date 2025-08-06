@@ -44,7 +44,7 @@ export default {
       this.stompClient.connect(
           { Authorization: `Bearer ${this.token}` },
           () => {
-            this.stompClient.subscribe(`/topic/${this.roomId}`, (message) => {
+            this.stompClient.subscribe(`/topic/chat-rooms/${this.roomId}/chat-message`, (message) => {
               const parseMessage = JSON.parse(message.body);
               this.messages.push(parseMessage);
             }, { Authorization: `Bearer ${this.token}` });
@@ -61,7 +61,7 @@ export default {
 
       const json = JSON.stringify(message);
 
-      this.stompClient.send(`/publish/${this.roomId}`, json);
+      this.stompClient.send(`/publish/chat-rooms/${this.roomId}/chat-message`, json);
       this.newMessage = "";
     },
     scrollToBottom() {
@@ -75,7 +75,7 @@ export default {
     },
     disconnectWebsocket() {
       if (this.stompClient && this.stompClient.connected) {
-        this.stompClient.unsubscribe(`/topic/${this.roomId}`);
+        this.stompClient.unsubscribe(`/topic/chat-rooms/${this.roomId}/chat-message`);
         this.stompClient.disconnect();
         console.log("Disconnected");
         this.stompClient = null;
