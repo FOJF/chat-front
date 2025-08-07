@@ -7,6 +7,8 @@ import axios from "axios";
 export default {
   data() {
     return {
+      participants: [],
+      onlineParticipants: [],
       messages: [],
       newMessage: "",
       stompClient: null,
@@ -17,11 +19,14 @@ export default {
   async created() {
     this.senderEmail = localStorage.getItem("email");
     this.roomId = this.$route.params.roomId;
-    const response = await axios.get(`${process.env.VUE_APP_API_BASE_URL}/chat-rooms/${this.roomId}/messages`);
 
-    console.log(response.data.data);
+    const messagesRes = await axios.get(`${process.env.VUE_APP_API_BASE_URL}/chat-rooms/${this.roomId}/messages`);
+    this.messages = messagesRes.data.data;
 
-    this.messages = response.data.data;
+    const participantsRes = await axios.get(`${process.env.VUE_APP_API_BASE_URL}/chat-rooms/${this.roomId}/participants`);
+    this.participants = participantsRes.data.data;
+
+    console.log(this.participants);
 
     this.connectWebsocket();
   },
@@ -31,6 +36,20 @@ export default {
   },
   beforeUnmount() { // 화면을 완전히 껐을 때 호출되는 훅홤수
     this.disconnectWebsocket();
+  },
+  computed: {
+    displayedMessages() {
+      console.log("test");
+      return this.messages.map(message => {
+        let unreadCount = 0;
+        this.participants.forEach(participant => {
+          if (participant.lastReadMessageId < message.id) {
+            unreadCount++;
+          }
+        });
+        return { ...message, unreadCount };
+      });
+    }
   },
   methods: {
     connectWebsocket() {
@@ -42,14 +61,48 @@ export default {
       this.token = localStorage.getItem('token');
 
       this.stompClient.connect(
-          { Authorization: `Bearer ${this.token}` },
-          () => {
-            this.stompClient.subscribe(`/topic/chat-rooms/${this.roomId}/chat-message`, (message) => {
-              const parseMessage = JSON.parse(message.body);
-              this.messages.push(parseMessage);
-            }, { Authorization: `Bearer ${this.token}` });
-          }
+        { Authorization: `Bearer ${this.token}` },
+        () => {
+          this.stompClient.subscribe(`/topic/chat-rooms/${this.roomId}/chat-message`, (message) => {
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            const parseMessage = JSON.parse(message.body);
+            console.log(parseMessage);
+            this.messages.push(parseMessage);
+          }, { Authorization: `Bearer ${this.token}` });
+
+          this.stompClient.subscribe(`/topic/chat-rooms/${this.roomId}/chat-participants`, (message) => {
+            const parseMessage = JSON.parse(message.body);
+            this.participants = parseMessage;
+          }, { Authorization: `Bearer ${this.token}` });
+
+          this.stompClient.subscribe(`/topic/chat-rooms/${this.roomId}/chat-online-participants`, (message) => {
+            const parseMessage = JSON.parse(message.body);
+            this.onlineParticipants = parseMessage;
+          }, { Authorization: `Bearer ${this.token}` });
+
+          this.stompClient.send(`/publish/chat-rooms/${this.roomId}/online`, this.senderEmail);
+        }
       );
+
+      this.stompClient.onclose = (event) => {
+        console.error("STOMP Connection Closed : ", event);
+      };
+
+      this.stompClient.onerror = (error) => {
+        console.error("STOMP Error : ", error);
+      };
+    },
+    disconnectWebsocket() {
+      this.stompClient.send(`/publish/chat-rooms/${this.roomId}/offline`);
+
+      if (this.stompClient && this.stompClient.connected) {
+        this.stompClient.unsubscribe(`/topic/chat-rooms/${this.roomId}/chat-message`);
+        this.stompClient.unsubscribe(`/topic/chat-rooms/${this.roomId}/chat-participants`);
+        this.stompClient.unsubscribe(`/topic/chat-rooms/${this.roomId}/chat-online-participants`);
+        this.stompClient.disconnect();
+        console.log("Disconnected");
+        this.stompClient = null;
+      }
     },
     sendMessage() {
       if (this.newMessage.trim() === "") return;
@@ -72,14 +125,6 @@ export default {
           el.scrollTop = el.scrollHeight;
         }
       });
-    },
-    disconnectWebsocket() {
-      if (this.stompClient && this.stompClient.connected) {
-        this.stompClient.unsubscribe(`/topic/chat-rooms/${this.roomId}/chat-message`);
-        this.stompClient.disconnect();
-        console.log("Disconnected");
-        this.stompClient = null;
-      }
     }
   },
   watch: {
@@ -103,28 +148,19 @@ export default {
           </v-card-title>
           <v-divider></v-divider>
           <v-card-text class="flex-grow-1 overflow-y-auto pa-4" ref="chatBox">
-            <div
-                v-for="(message, index) in messages"
-                :key="index"
-                :class="['d-flex', 'mb-4', message.senderEmail === this.senderEmail ? 'justify-end' : 'justify-start']"
-            >
+            <div v-for="message in displayedMessages" :key="message.id"
+              :class="['d-flex', 'mb-4', message.senderEmail === this.senderEmail ? 'justify-end' : 'justify-start']">
               <div :class="['message-bubble', message.senderEmail === this.senderEmail ? 'sent' : 'received']">
-                <div class="font-weight-bold" v-if="message.senderEmail !== this.senderEmail">{{ message.senderEmail }}</div>
+                <div class="font-weight-bold" v-if="message.senderEmail !== this.senderEmail">{{ message.senderEmail }}
+                </div>
                 <div>{{ message.message }}</div>
-                <div class="text-caption text-right">{{ message.readCount }}</div>
+                <div class="text-caption text-right">{{ message.unreadCount }}</div>
               </div>
             </div>
           </v-card-text>
           <v-divider></v-divider>
           <v-card-actions class="pa-4">
-            <v-text-field
-                v-model="newMessage"
-                label="메세지 입력"
-                @keyup.enter="sendMessage"
-                hide-details
-                outlined
-                dense
-            />
+            <v-text-field v-model="newMessage" label="메세지 입력" @keyup.enter="sendMessage" hide-details outlined dense />
             <v-btn color="primary" class="ml-4" @click="sendMessage">전송</v-btn>
           </v-card-actions>
         </v-card>
